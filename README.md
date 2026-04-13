@@ -5,7 +5,7 @@
 
 ---
 
-## Installing Flutter (Do This First)
+## Installing Flutter 
 
 ### Windows
 
@@ -207,7 +207,7 @@ static const int quizSize    = 8;   // quiz questions
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
@@ -220,7 +220,7 @@ static const int quizSize    = 8;   // quiz questions
 
 ---
 
-## 📈 Roadmap
+## Roadmap
 
 | # | Feature | Status |
 |---|---------|--------|
