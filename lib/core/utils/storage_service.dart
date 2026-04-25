@@ -62,6 +62,7 @@ class StorageService {
 
     await _p.setInt(_streakKey, streak);
     await _p.setString(_lastOpenedKey, todayStr);
+    await _recordPlayedDay(todayStr);  
     return streak;
   }
 
@@ -171,4 +172,33 @@ class StorageService {
     await _p.setString(_cachedNewsKey, jsonEncode(articles));
     await _p.setString('news_cache_date', today);
   }
+
+  // ── Settings ──────────────────────────────────────────────────────────────
+  static const _wordCountKey    = 'setting_word_count';
+  static const _quizCountKey    = 'setting_quiz_count';
+  static const _newsTopicKey    = 'setting_news_topic';
+
+  int getWordCount() => _p.getInt(_wordCountKey) ?? 12;
+  int getQuizCount() => _p.getInt(_quizCountKey) ?? 8;
+  String getNewsTopic() => _p.getString(_newsTopicKey) ?? 'all';
+
+  Future<void> setWordCount(int v) => _p.setInt(_wordCountKey, v);
+  Future<void> setQuizCount(int v) => _p.setInt(_quizCountKey, v);
+  Future<void> setNewsTopic(String v) => _p.setString(_newsTopicKey, v);
+
+  // ── Streak calendar ────────────────────────────────────────────────────────
+  // Stores a set of date strings "yyyy-MM-dd" for every day the user opened app
+  static const _playedDaysKey = 'played_days';
+
+  Set<String> getPlayedDays() {
+    return (_p.getStringList(_playedDaysKey) ?? []).toSet();
+  }
+
+  Future<void> _recordPlayedDay(String dateStr) async {
+    final days = getPlayedDays()..add(dateStr);
+    await _p.setStringList(_playedDaysKey, days.toList());
+  }
+
+  String? getCachedNewsTopic() => _p.getString('cached_news_topic');
+  Future<void> setCachedNewsTopic(String t) => _p.setString('cached_news_topic', t);
 }

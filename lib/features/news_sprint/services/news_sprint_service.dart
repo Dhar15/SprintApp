@@ -12,7 +12,9 @@ class NewsSprintService {
   Future<List<NewsArticle>> fetchArticles() async {
     final storage = StorageService.instance;
     final cached = storage.getCachedNews();
-    if (cached != null && cached.isNotEmpty) {
+    final cachedTopic = storage.getCachedNewsTopic();
+    final currentTopic = storage.getNewsTopic();
+    if (cached != null && cached.isNotEmpty && cachedTopic == currentTopic) {
       return cached.map((e) => NewsArticle.fromJson(e)).toList();
     }
 
@@ -20,18 +22,23 @@ class NewsSprintService {
       final articles = await _fetchFromNewsApi();
       if (articles.isNotEmpty) {
         await storage.cacheNews(articles.map((a) => a.toJson()).toList());
+        await storage.setCachedNewsTopic(currentTopic);
         return articles;
       }
     } catch (e) {
       print('NewsAPI error: $e');
     }
-
     return _staticFallbackArticles();
   }
 
   Future<List<NewsArticle>> _fetchFromNewsApi() async {
+    final topic = StorageService.instance.getNewsTopic();
+    final q = topic == 'all'
+        ? 'world OR technology OR business OR science OR health'
+        : topic;
+
     final uri = Uri.parse(
-      '$_newsApiBase?language=en&sortBy=publishedAt&pageSize=$maxArticles&q=world OR technology OR business&apiKey=${AppConfig.newsApiKey}',
+      '$_newsApiBase?language=en&sortBy=publishedAt&pageSize=$maxArticles&q=$q&apiKey=${AppConfig.newsApiKey}',
     );
 
     final response = await http.get(uri).timeout(const Duration(seconds: 10));

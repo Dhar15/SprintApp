@@ -6,8 +6,8 @@ import '../models/word_model.dart';
 import '../../../core/utils/storage_service.dart';
 
 class WordSprintService {
-  static const int sessionSize = 12;
-  static const int quizSize = 8;
+  int get sessionSize => StorageService.instance.getWordCount();
+  int get quizSize => StorageService.instance.getQuizCount();
 
   // Free Dictionary API — no key required
   static const String _dictApiBase =
@@ -68,9 +68,13 @@ class WordSprintService {
     newWords.shuffle(rng);
     oldWords.shuffle(rng);
 
-    // 70% new, 30% revisit
-    final newCount = min((sessionSize * 0.7).ceil(), newWords.length);
-    final oldCount = min(sessionSize - newCount, oldWords.length);
+    // 70% new words, 30% old words (if available) - adjust if not enough in either pool
+    final targetNew = (sessionSize * 0.7).ceil();
+    final targetOld = sessionSize - targetNew;
+
+    final newCount = min(targetNew + max(0, targetOld - oldWords.length), newWords.length).toInt();
+    final oldCount = min(targetOld, oldWords.length).toInt();
+    final actualSize = min(newCount + oldCount, sessionSize).toInt();
 
     final selected = [
       ...newWords.take(newCount),
@@ -102,7 +106,7 @@ class WordSprintService {
       }
     }
 
-    return resolved.take(sessionSize).toList();
+    return resolved.take(actualSize).toList();
   }
 
   // ── Quiz generation ────────────────────────────────────────────────────────

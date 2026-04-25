@@ -9,6 +9,9 @@ import '../../word_sprint/screens/word_sprint_screen.dart';
 import '../../word_sprint/services/word_sprint_provider.dart';
 import '../../news_sprint/screens/news_sprint_screen.dart';
 import '../../news_sprint/services/news_sprint_provider.dart';
+import '../widgets/streak_calendar.dart';
+import '../../settings/settings_screen.dart';
+import '../../../core/utils/storage_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -155,38 +158,64 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         const Spacer(),
-        // Streak chip
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: _streak > 0
-                ? AppColors.warning.withOpacity(0.12)
-                : AppColors.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: _streak > 0
-                  ? AppColors.warning.withOpacity(0.35)
-                  : AppColors.border,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _streak > 0 ? '🔥' : '○',
-                style: const TextStyle(fontSize: 13),
-              ),
-              const SizedBox(width: 5),
-              Text(
-                _streak > 0 ? 'Day $_streak' : 'Start',
-                style: GoogleFonts.dmSans(
-                  color: _streak > 0 ? AppColors.warning : AppColors.textSecondary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+        GestureDetector(
+        onTap: () => StreakCalendarSheet.show(context),
+        child: 
+            // Streak chip
+            Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+                color: _streak > 0
+                    ? AppColors.warning.withOpacity(0.12)
+                    : AppColors.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                color: _streak > 0
+                    ? AppColors.warning.withOpacity(0.35)
+                    : AppColors.border,
                 ),
-              ),
-            ],
-          ),
+            ),
+            child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                Text(
+                    _streak > 0 ? '🔥' : '○',
+                    style: const TextStyle(fontSize: 13),
+                ),
+                const SizedBox(width: 5),
+                Text(
+                    _streak > 0 ? 'Day $_streak' : 'Start',
+                    style: GoogleFonts.dmSans(
+                    color: _streak > 0 ? AppColors.warning : AppColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    ),
+                ),
+                ],
+            ),
+        ),
+        ),      
+        const SizedBox(width: 12),
+        // Settings button
+        GestureDetector(
+        onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SettingsScreen()),
+        ).then((_) => _loadStats()),
+        child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+            ),
+            child: const Icon(
+            Icons.tune_rounded,
+            color: AppColors.textSecondary,
+            size: 18,
+            ),
+        ),
         ),
       ],
     ).animate().fadeIn(duration: 400.ms);
@@ -410,7 +439,7 @@ class _WordSprintButtonState extends State<_WordSprintButton> {
                             const SizedBox(width: 7),
                             Text(
                               widget.wordsLearned == 0
-                                  ? '12 words · 5 min quiz'
+                                  ? '${StorageService.instance.getWordCount()} words · quiz'
                                   : '${widget.wordsLearned} words mastered',
                               style: GoogleFonts.dmSans(
                                 color: AppColors.textSecondary,
@@ -548,7 +577,7 @@ class _NewsSprintButtonState extends State<_NewsSprintButton> {
                             const SizedBox(width: 7),
                             Text(
                               widget.articlesRead == 0
-                                  ? '8 stories · AI quiz'
+                                  ? 'Top stories · AI quiz'
                                   : '${widget.articlesRead} articles read',
                               style: GoogleFonts.dmSans(
                                 color: AppColors.textSecondary,

@@ -1,83 +1,139 @@
-# Sprint — Swipe-Based Daily Learning App
+# ⚡ Sprint — Swipe-Based Daily Learning App
 
 > Replace mindless scrolling with intelligent, addictive micro-learning.  
-> Live dictionary definitions. Real news. Zero friction.
+> Live dictionary definitions. Real news. AI-generated quizzes. Zero friction.
 
 ---
 
-## Installing Flutter 
+## What is this?
+
+Sprint is an Android app built with Flutter that gives you two focused learning modes designed for 5–15 minute morning sessions:
+
+- **Word Sprint** — learn GRE/SAT words per session (configurable) with live dictionary definitions, phonetics, part of speech, and an MCQ quiz at the end
+- **News Sprint** — read real news articles fetched fresh daily, then take an AI-generated comprehension quiz based on the actual content
+
+No login. No onboarding. Opens straight to the point.
+
+---
+
+## Prerequisites
+
+- Flutter SDK 3.41+
+- Android Studio (for Android SDK)
+- Java 17
+- A Groq API key (free) — for AI quiz generation
+- A NewsAPI key (free) — for live news
+
+---
+
+## Installing Flutter
 
 ### Windows
-
 ```powershell
-# Option 1: winget (recommended, Windows 10+)
 winget install Google.Flutter
-
-# Option 2: Manual
-# 1. Download the Flutter SDK zip from https://docs.flutter.dev/get-started/install/windows
-# 2. Extract to C:\flutter  (avoid paths with spaces)
-# 3. Add C:\flutter\bin to your PATH environment variable:
-#    Search → "Edit environment variables" → System Variables → Path → Edit → New → C:\flutter\bin
-# 4. Restart your terminal, then verify:
+# Restart terminal, then verify:
 flutter --version
 ```
 
 ### macOS
-
 ```bash
-# Option 1: Homebrew (easiest)
 brew install --cask flutter
-
-# Option 2: Manual
-curl -O https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_arm64_3.19.0-stable.zip
-unzip flutter_macos_arm64_3.19.0-stable.zip -d ~/development
-echo 'export PATH="$PATH:$HOME/development/flutter/bin"' >> ~/.zshrc
-source ~/.zshrc
-
 flutter --version
 ```
 
-### Linux (Ubuntu/Debian)
-
+### Linux
 ```bash
 sudo snap install flutter --classic
 flutter --version
 ```
 
-### Verify Everything Is Ready
+---
 
-```bash
+## Android Setup
+
+1. Download and install **Android Studio** from https://developer.android.com/studio
+2. Open Android Studio and complete the setup wizard (downloads the Android SDK)
+3. Go to **Settings → Languages & Frameworks → Android SDK → SDK Tools tab**
+4. Check **Android SDK Command-line Tools (latest)** → Apply
+5. Set your environment variables:
+
+```powershell
+# Windows PowerShell
+[System.Environment]::SetEnvironmentVariable("ANDROID_HOME", "$env:LOCALAPPDATA\Android\Sdk", "User")
+$current = [System.Environment]::GetEnvironmentVariable("PATH", "User")
+[System.Environment]::SetEnvironmentVariable("PATH", "$current;$env:LOCALAPPDATA\Android\Sdk\platform-tools", "User")
+```
+
+6. Restart terminal, then accept licenses:
+```powershell
+flutter doctor --android-licenses
+```
+
+7. Verify:
+```powershell
 flutter doctor
 ```
-You need ✓ on Flutter, ✓ on Android toolchain (or Xcode for iOS). Run `flutter doctor --android-licenses` to accept Android licenses if prompted.
+
+---
+
+## API Keys
+
+Create `lib/core/utils/app_config.dart`:
+
+```dart
+class AppConfig {
+  static const String groqApiKey = 'Bearer gsk_your_key_here';
+  static const String newsApiKey = 'your_newsapi_key_here';
+}
+```
+
+This file is gitignored — never commit it.
+
+**Groq** (AI quiz generation — free, no credit card needed):  
+https://console.groq.com → API Keys → Create key
+
+**NewsAPI** (live news — free tier):  
+https://newsapi.org/register
 
 ---
 
 ## Running the App
 
-```bash
-# 1. Extract the zip, navigate into it
-unzip sprint_app.zip
-cd sprint_app
-
-# 2. Install Flutter dependencies
+```powershell
+# Install dependencies
 flutter pub get
 
-# 3. Connect an Android device (enable USB debugging)
-#    OR start an emulator:
-#    Android Studio → Device Manager → Start an emulator
+# Connect Android phone via USB
+# Enable USB Debugging: Settings → About Phone → tap Build Number 7 times
+# Settings → Developer Options → USB Debugging → On
 
-# 4. Check Flutter can see your device
+# Verify Flutter sees your device
 flutter devices
 
-# 5. Run the app
-flutter run
+# Run on your phone
+flutter run -d <your-device-id>
+```
 
-# 6. (Optional) Build a release APK to install directly
+### Daily development workflow
+Once `flutter run` is active:
+```
+r   → hot reload (UI changes, under 1 second)
+R   → hot restart (logic/state changes, ~3 seconds)
+q   → quit
+```
+
+Full rebuild only needed when adding packages or changing `AndroidManifest.xml`.
+
+---
+
+## Building a Release APK
+
+```powershell
 flutter build apk --release
-# APK will be at: build/app/outputs/flutter-apk/app-release.apk
-# Transfer to phone and install, or:
-flutter install   # installs directly to connected device
+# Output: build\app\outputs\flutter-apk\app-release.apk
+
+# Install directly to connected phone:
+flutter install
 ```
 
 ---
@@ -91,11 +147,16 @@ sprint_app/
 │   ├── core/
 │   │   ├── theme/app_theme.dart               ← Colors, fonts (DM Sans), design tokens
 │   │   └── utils/
-│   │       ├── storage_service.dart            ← SharedPreferences: word cache, stats, streak
+│   │       ├── storage_service.dart            ← SharedPreferences: word cache, stats, streak, settings
 │   │       └── app_config.dart                 ← API keys (gitignored)
 │   │
 │   └── features/
-│       ├── home/screens/home_screen.dart        ← Home with streak, stats, greeting
+│       ├── home/
+│       │   ├── screens/home_screen.dart        ← Home: greeting, streak chip, stats, sprint buttons
+│       │   └── widgets/streak_calendar.dart    ← Bottom sheet: 3-month scrollable calendar
+│       │
+│       ├── settings/
+│       │   └── settings_screen.dart            ← Word count, quiz count sliders + news topic picker
 │       │
 │       ├── word_sprint/
 │       │   ├── models/word_model.dart           ← WordModel + fromDictionaryApi factory
@@ -110,100 +171,97 @@ sprint_app/
 │       └── news_sprint/
 │           ├── models/news_model.dart
 │           ├── services/
-│           │   ├── news_sprint_service.dart     ← NewsAPI fetch, Groq quiz generation
+│           │   ├── news_sprint_service.dart     ← NewsAPI fetch, topic filtering, Groq quiz gen
 │           │   └── news_sprint_provider.dart    ← State machine
 │           ├── screens/news_sprint_screen.dart
 │           └── widgets/
-│               ├── news_card.dart               ← Article with Read More link
+│               ├── news_card.dart               ← Article card with Read More link
 │               └── news_quiz_card.dart          ← AI-generated MCQ with explanation
 │
-└── assets/data/word_list.json                   ← 315 GRE/SAT word strings (no definitions)
+└── assets/data/word_list.json                   ← 315 GRE/SAT word strings (no definitions stored)
 ```
 
 ---
 
-## 📡 APIs Used
+## APIs
 
 ### Word Sprint — Free Dictionary API
-- **URL:** `https://api.dictionaryapi.dev/api/v2/entries/en/{word}`
-- **Auth:** None required. Completely free.
-- **What it returns:** Full definition, part of speech, phonetic pronunciation, usage examples
-- **Caching:** Each word definition is cached to SharedPreferences on first fetch — subsequent sessions are instant and work offline
+- **Endpoint:** `https://api.dictionaryapi.dev/api/v2/entries/en/{word}`
+- **Auth:** None. Completely free, no key needed.
+- **Returns:** Definition, part of speech, phonetic pronunciation, usage examples
+- **Caching:** Cached to SharedPreferences on first fetch. Works fully offline after that.
 
 ### News Sprint — NewsAPI
-- **URL:** `https://newsapi.org/v2/everything?language=en&sortBy=publishedAt`
+- **Endpoint:** `https://newsapi.org/v2/everything?language=en&sortBy=publishedAt`
 - **Auth:** Free API key from newsapi.org
-- **Cache:** Date-based — same articles all day, auto-refreshes every morning
+- **Cache:** Date-based — fetches once per day, serves from cache for the rest of the day
+- **Topic filtering:** User-selectable from Settings (Technology, Business, Science, Health, Sports, Entertainment, Politics, or All)
 - **Fallback:** 8 built-in static articles if network fails
 
-### News Quiz — GroqAPI
-- **URL:** `https://api.groq.com/openai/v1/chat/completions`
+### News Quiz — Groq (LLaMA 3.3 70B)
+- **Endpoint:** `https://api.groq.com/openai/v1/chat/completions`
 - **Auth:** Free API key from console.groq.com
-- **What it does:**  Reads each article summary and generates a factual MCQ quiz with 4 plausible options and an explanation
-- **Cost:** Free tier, 14,400 requests/day
+- **What it does:** Reads each article and generates a factual comprehension question with 4 plausible options and an explanation
+- **Free tier:** 14,400 requests/day
 
 ---
 
-## How the Word Sprint API Flow Works
+## How Word Sprint Works
 
 ```
 Session start
   │
   ├─ Load word_list.json (315 strings) — instant, local
-  ├─ Select 12 words: 70% unseen + 30% review
+  ├─ Select N words (user-configured): 70% unseen + 30% review
+  │   └─ If not enough reviewed words, backfills with new words
   │
-  ├─ Fetch all 12 definitions in parallel:
+  ├─ Fetch all definitions in parallel:
   │     ├─ Cached in SharedPreferences? → return instantly (0ms)
   │     └─ Not cached? → GET dictionaryapi.dev → parse → cache → return
   │
   ├─ Swipe through word cards (word, phonetic, POS, meaning, example)
-  ├─ Auto-start 8-question MCQ quiz
-  └─ Summary screen: words learned + accuracy %
+  ├─ Auto-start MCQ quiz (question count user-configured)
+  └─ Summary: words learned + accuracy %
 
 From second session onwards: fully offline, all definitions cached.
 ```
 
----
-
-## How the News Sprint API Flow Works
+## How News Sprint Works
 
 ```
 Session start
   │
-  ├─ Check date-based cache → today's articles already fetched? serve instantly
-  ├─ Otherwise: GET newsapi.org → parse + summarize → cache for the day
+  ├─ Check date + topic cache → already fetched today for this topic? serve instantly
+  ├─ Otherwise: GET newsapi.org with topic filter → summarize → cache for the day
   │
-  ├─ Swipe through 8 news cards (headline, summary, Read More link)
+  ├─ Swipe through news cards (headline, summary, Read More link)
   │
   ├─ After last article → Groq generates quiz questions in parallel:
   │     For each article: send title + summary → receive question + 4 options + explanation
   │
-  └─ Summary screen: articles read + quiz score DU```
+  └─ Summary: articles read + quiz score
+```
 
 ---
 
-## ⚙️ Customisation
+## Settings
 
-### Edit
-`assets/data/word_list.json` is just a flat JSON array of strings:
-```json
-["Ephemeral", "Sardonic", "Laconic", "YourCustomWord", ...]
-```
-The Free Dictionary API covers virtually any English word — add whatever you want.
+Accessible via the tune icon (⚙) on the home screen top bar.
 
-### Change session size
-```dart
-// In lib/features/word_sprint/services/word_sprint_service.dart
-static const int sessionSize = 12;  // words per session
-static const int quizSize    = 8;   // quiz questions
-```
+| Setting | Default | Range |
+|---------|---------|-------|
+| Words per session | 12 | 5 – 20 |
+| Quiz questions | 8 | 3 – words per session |
+| News topic | All | All, Technology, Business, Science, Health, Sports, Entertainment, Politics |
 
-### Change news topics
-```dart
-// lib/features/news_sprint/services/news_sprint_service.dart
-// Edit the q= parameter:
-`'...&q=world OR technology OR business&...'`
-```
+Quiz questions auto-clamp when words per session is reduced below the current quiz count.  
+News cache invalidates automatically when topic is changed.
+
+---
+
+## Streak & Calendar
+
+Tap the streak chip (🔥 Day N) on the home screen to open a 3-month scrollable calendar. Days you opened the app are marked with 🔥. Today is marked with ⭕. Streak resets if you miss a day.
 
 ---
 
@@ -211,28 +269,41 @@ static const int quizSize    = 8;   // quiz questions
 
 | Problem | Fix |
 |---------|-----|
-| `flutter: command not found` | Add Flutter `bin/` to your PATH and restart terminal |
-| `flutter doctor` shows Android SDK issues | Install Android Studio, accept licenses: `flutter doctor --android-licenses` |
-| Words show "No definition available" | Check internet connection. After first fetch, works offline. |
-| News won't load | rss2json free tier may be rate-limited. App falls back to 8 built-in articles automatically. |
-| Build fails: `minSdkVersion` too low | Set `minSdkVersion 21` in `android/app/build.gradle` |
-| Fonts look wrong in emulator | Google Fonts download on first run; needs internet once |
+| `flutter: command not found` | Add Flutter `bin/` to PATH, restart terminal |
+| `ANDROID_HOME not found` | Set env var pointing to SDK folder, restart terminal |
+| `cmdline-tools component is missing` | Android Studio → SDK Manager → SDK Tools → install Command-line Tools |
+| `Unsupported class file major version 65` | Update `gradle-wrapper.properties` to Gradle 8.11.1 |
+| `Unknown Kotlin JVM target: 21` | Set `jvmTarget = "17"` in `android/app/build.gradle` |
+| `AGP requires 8.9.1 or higher` | Set AGP to `8.9.1` in `settings.gradle`, Gradle to `8.11.1` in wrapper |
+| `ic_launcher not found` | Run `flutter create . --platforms=android` to regenerate icons |
+| Read More links not opening | Add `https` scheme to `<queries>` block in `AndroidManifest.xml` |
+| Words show "No definition available" | Check internet. After first fetch cached and works offline. |
+| News not loading | Check NewsAPI key in `app_config.dart`. Falls back to static articles if invalid. |
+| Seeing old/wrong news after topic change | Add `clearNewsCache()` call once in provider, hot restart, then remove it |
+| Quiz shows fallback questions | Check Groq key has `Bearer ` prefix: `'Bearer gsk_...'` |
+| Fonts look wrong on first run | DM Sans downloads via google_fonts on first launch — needs internet once |
 
 ---
 
 ## Roadmap
 
-| # | Feature | Status |
-|---|---------|--------|
-| ✅ | Home screen, Word Sprint, News Sprint | Done |
-| ✅ | Live definitions via Free Dictionary API | Done |
-| ✅ | Word definition cache (works offline after first use) | Done |
-| ✅ | Phonetic + part-of-speech display | Done |
-| 🔲 | Spaced repetition algorithm (SM-2) | Next |
-| 🔲 | Push notification | Next |
-| 🔲 | Category filter for news | Planned |
-| 🔲 | iOS Support | Planned |
+| Feature | Status |
+|---------|--------|
+| Home screen, Word Sprint, News Sprint | Done |
+| Live definitions via Free Dictionary API | Done |
+| Phonetic pronunciation + part of speech | Done |
+| Word definition cache (offline after first use) | Done |
+| NewsAPI integration (fresh daily news) | Done |
+| AI quiz generation via Groq (LLaMA 3.3 70B) | Done |
+| Date + topic based news cache | Done |
+| Streak tracking (consecutive days) | Done |
+| Streak calendar (3-month scrollable view) | Done |
+| Read More links to full articles | Done |
+| Settings: word count, quiz count, news topic | Done |
+| Spaced repetition (SM-2 algorithm) | Upcoming |
+| Push notification daily reminder | Upcoming |
+| iOS support | 🔲 Planned |
 
 ---
 
-*Flutter 3.41 · Android 5.0+ · No login · No ads · Works offline (Word Sprint after first session)*
+*Flutter 3.41 · Android 5.0+ · No login · No ads · Word Sprint works offline after first session*
