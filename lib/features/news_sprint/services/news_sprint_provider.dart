@@ -116,6 +116,7 @@ class NewsSprintProvider extends ChangeNotifier {
       correct: _correctAnswers,
       articlesRead: _articles.length,
     );
+    await StorageService.instance.recordOpenedToday();
     _state = NewsSprintState.summary;
     notifyListeners();
   }

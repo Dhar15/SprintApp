@@ -38,9 +38,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _newsStats = storage.getNewsStats();
       _streak = storage.getStreak();
     });
-    storage.recordOpenedToday().then((s) {
-      if (mounted) setState(() => _streak = s);
-    });
   }
 
   String get _greeting {

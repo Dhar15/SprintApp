@@ -112,6 +112,7 @@ class WordSprintProvider extends ChangeNotifier {
       _correctAnswers,
       _quizQuestions.length,
     );
+    await StorageService.instance.recordOpenedToday();
     _state = WordSprintState.summary;
     notifyListeners();
   }
