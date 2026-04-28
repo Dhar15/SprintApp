@@ -148,6 +148,7 @@ sprint_app/
 │   │   ├── theme/app_theme.dart               ← Colors, fonts (DM Sans), design tokens
 │   │   └── utils/
 │   │       ├── storage_service.dart            ← SharedPreferences: word cache, stats, streak, settings
+│           ├── notification_service.dart       ← Push Notifications to the user
 │   │       └── app_config.dart                 ← API keys (gitignored)
 │   │
 │   └── features/
@@ -265,6 +266,12 @@ Tap the streak chip (🔥 Day N) on the home screen to open a 3-month scrollable
 
 ---
 
+## Push Notifications
+
+Get notifications as per your convenience - enable them from settings and set a fixed time you'd like the reminder to be sent so you never miss out on your streaks.
+
+---
+
 ## Troubleshooting
 
 | Problem | Fix |
@@ -300,8 +307,7 @@ Tap the streak chip (🔥 Day N) on the home screen to open a 3-month scrollable
 | Streak calendar (3-month scrollable view) | Done |
 | Read More links to full articles | Done |
 | Settings: word count, quiz count, news topic | Done |
-| Spaced repetition (SM-2 algorithm) | Upcoming |
-| Push notification daily reminder | Upcoming |
+| Push notification daily reminder | Done |
 | iOS support | 🔲 Planned |
 
 ---

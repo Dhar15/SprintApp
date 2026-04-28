@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/storage_service.dart';
 import 'features/home/screens/home_screen.dart';
+import 'core/utils/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,7 @@ Future<void> main() async {
 
   // Init local storage
   await StorageService.instance.init();
+  await NotificationService.instance.init(); 
 
   runApp(const SprintApp());
 }

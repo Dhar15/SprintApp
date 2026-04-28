@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/storage_service.dart';
+import '../../../core/utils/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -15,6 +16,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _wordCount;
   late int _quizCount;
   late String _newsTopic;
+  late bool _notificationsEnabled;
+  late TimeOfDay _notificationTime;
 
   final List<Map<String, String>> _topics = [
     {'value': 'all',          'label': 'All Topics',   'emoji': '🌍'},
@@ -34,6 +37,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _wordCount  = s.getWordCount();
     _quizCount  = s.getQuizCount();
     _newsTopic  = s.getNewsTopic();
+    _notificationsEnabled = s.getNotificationsEnabled();
+    _notificationTime = TimeOfDay(
+      hour: s.getNotificationHour(),
+      minute: s.getNotificationMinute(),
+    );
   }
 
   Future<void> _save() async {
@@ -189,7 +197,111 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 24),
+        _buildSection(
+          label: 'NOTIFICATIONS',
+          color: AppColors.success,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Daily reminder',
+                      style: GoogleFonts.dmSans(
+                        color: AppColors.textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'Get nudged to complete your Sprint',
+                      style: GoogleFonts.dmSans(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                Switch(
+                  value: _notificationsEnabled,
+                  activeColor: AppColors.success,
+                  onChanged: (val) async {
+                    if (val) {
+                      await NotificationService.instance.requestPermission();
+                      final success = await NotificationService.instance
+                          .scheduleDailyNotification(_notificationTime);
+                      setState(() => _notificationsEnabled = success);
+                    } else {
+                      await NotificationService.instance.cancelNotification();
+                      setState(() => _notificationsEnabled = false);
+                    }
+                  },
+                ),
+              ],
+            ),
+            if (_notificationsEnabled) ...[
+              const SizedBox(height: 16),
+              GestureDetector(
+                onTap: () async {
+                  final picked = await showTimePicker(
+                    context: context,
+                    initialTime: _notificationTime,
+                    builder: (context, child) => Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: const ColorScheme.dark(
+                          primary: AppColors.success,
+                          surface: AppColors.surfaceElevated,
+                          onSurface: AppColors.textPrimary,
+                        ),
+                      ),
+                      child: child!,
+                    ),
+                  );
+                  if (picked != null) {
+                    setState(() => _notificationTime = picked);
+                    await NotificationService.instance
+                        .scheduleDailyNotification(picked);
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.access_time_rounded,
+                          color: AppColors.success, size: 18),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Remind me at ${_notificationTime.format(context)}',
+                        style: GoogleFonts.dmSans(
+                          color: AppColors.textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        'Change',
+                        style: GoogleFonts.dmSans(
+                          color: AppColors.success,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
         ],
       ),
     );

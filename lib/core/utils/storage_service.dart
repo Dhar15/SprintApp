@@ -186,6 +186,20 @@ class StorageService {
   Future<void> setQuizCount(int v) => _p.setInt(_quizCountKey, v);
   Future<void> setNewsTopic(String v) => _p.setString(_newsTopicKey, v);
 
+  static const _notifEnabledKey = 'notif_enabled';
+  static const _notifHourKey    = 'notif_hour';
+  static const _notifMinuteKey  = 'notif_minute';
+
+  bool getNotificationsEnabled() => _p.getBool(_notifEnabledKey) ?? false;
+  int getNotificationHour()      => _p.getInt(_notifHourKey) ?? 7;
+  int getNotificationMinute()    => _p.getInt(_notifMinuteKey) ?? 0;
+
+  Future<void> setNotificationsEnabled(bool v) => _p.setBool(_notifEnabledKey, v);
+  Future<void> setNotificationTime(int hour, int minute) async {
+    await _p.setInt(_notifHourKey, hour);
+    await _p.setInt(_notifMinuteKey, minute);
+}
+
   // ── Streak calendar ────────────────────────────────────────────────────────
   // Stores a set of date strings "yyyy-MM-dd" for every day the user opened app
   static const _playedDaysKey = 'played_days';
