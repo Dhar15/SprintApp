@@ -8,6 +8,12 @@ import '../../../core/utils/app_config.dart';
 class NewsSprintService {
   static const int maxArticles = 8;
   static const String _newsApiBase = 'https://newsapi.org/v2/everything';
+  static const String _domains =
+    'thehindu.com,hindustantimes.com,ndtv.com,timesofindia.indiatimes.com,'
+    'indianexpress.com,livemint.com,business-standard.com,'
+    'economictimes.indiatimes.com,moneycontrol.com,scroll.in,'
+    'thewire.in,firstpost.com,news18.com,deccanherald.com,'
+    'bbc.com,reuters.com,apnews.com,theguardian.com';
 
   Future<List<NewsArticle>> fetchArticles() async {
     final storage = StorageService.instance;
@@ -33,20 +39,26 @@ class NewsSprintService {
 
   Future<List<NewsArticle>> _fetchFromNewsApi() async {
     final topic = StorageService.instance.getNewsTopic();
-    final q = topic == 'all'
-        ? 'world OR technology OR business OR science OR health'
-        : topic;
 
-    final uri = Uri.parse(
-      '$_newsApiBase?language=en&sortBy=publishedAt&pageSize=$maxArticles&q=$q&apiKey=${AppConfig.newsApiKey}',
-    );
+    final q = topic == 'all' ? 'india' : '$topic india';
+
+    final uri = Uri.parse(_newsApiBase).replace(queryParameters: {
+      'q': q,
+      'domains': _domains,
+      'language': 'en',
+      'sortBy': 'publishedAt',
+      'pageSize': maxArticles.toString(),
+      'apiKey': AppConfig.newsApiKey,
+    });
+
+    print('NewsAPI URL: $uri');
 
     final response = await http.get(uri).timeout(const Duration(seconds: 10));
-
     print('NewsAPI status: ${response.statusCode}');
-    print('NewsAPI body: ${response.body.substring(0, 300)}');
 
-    if (response.statusCode != 200) throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     if (data['status'] != 'ok') throw Exception('NewsAPI error: ${data['message']}');
@@ -54,31 +66,28 @@ class NewsSprintService {
     final articles = data['articles'] as List? ?? [];
 
     return articles
-        .where((a) {
-          final title = a['title'] as String? ?? '';
-          final desc = a['description'] as String? ?? '';
-          // Filter out removed articles, date-only titles, and empty content
-          if (title == '[Removed]' || title.isEmpty) return false;
-          if (desc.isEmpty) return false;
-          // Filter titles that are just dates or very short (likely metadata)
-          if (title.length < 15) return false;
-          // Filter titles that start with a date pattern like "12/04/2026"
-          if (RegExp(r'^\d{1,2}/\d{1,2}/\d{4}').hasMatch(title)) return false;
-          return true;
-        })
-        .take(maxArticles)
-        .map((a) => NewsArticle(
-              id: a['url'] ?? a['title'],
-              title: a['title'] as String,
-              summary: _summarize((a['description'] ?? a['content'] ?? '') as String),
-              source: (a['source']?['name'] ?? 'News') as String,
-              imageUrl: a['urlToImage'] as String?,
-              category: 'world',
-              publishedAt: DateTime.tryParse(a['publishedAt'] ?? '') ?? DateTime.now(),
-              originalUrl: a['url'] as String?,
-            ))
-        .toList();
-  }
+      .where((a) {
+        final title = a['title'] as String? ?? '';
+        final desc = a['description'] as String? ?? '';
+        if (title == '[Removed]' || title.isEmpty) return false;
+        if (desc.isEmpty) return false;
+        if (title.length < 15) return false;
+        if (RegExp(r'^\d{1,2}/\d{1,2}/\d{4}').hasMatch(title)) return false;
+        return true;
+      })
+      .take(maxArticles)
+      .map((a) => NewsArticle(
+            id: a['url'] ?? a['title'],
+            title: a['title'] as String,
+            summary: _summarize((a['description'] ?? a['content'] ?? '') as String),
+            source: (a['source']?['name'] ?? 'News') as String,
+            imageUrl: a['urlToImage'] as String?,
+            category: topic,
+            publishedAt: DateTime.tryParse(a['publishedAt'] ?? '') ?? DateTime.now(),
+            originalUrl: a['url'] as String?,
+          ))
+      .toList();
+    }
 
   String _summarize(String text) {
     if (text.isEmpty) return 'Read more for details.';

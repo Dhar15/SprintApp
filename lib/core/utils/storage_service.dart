@@ -215,4 +215,10 @@ class StorageService {
 
   String? getCachedNewsTopic() => _p.getString('cached_news_topic');
   Future<void> setCachedNewsTopic(String t) => _p.setString('cached_news_topic', t);
+
+  Future<void> clearNewsCache() async {
+    await _p.remove(_cachedNewsKey);
+    await _p.remove('news_cache_date');
+    await _p.remove('cached_news_topic');
+  }
 }
