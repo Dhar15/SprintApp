@@ -12,6 +12,7 @@ import '../../news_sprint/services/news_sprint_provider.dart';
 import '../widgets/streak_calendar.dart';
 import '../../settings/settings_screen.dart';
 import '../../../core/utils/storage_service.dart';
+import '../../word_of_day/widgets/word_of_day_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -91,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           // Main content
           SafeArea(
-            child: Padding(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 22),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,19 +101,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildTopBar(),
                   const SizedBox(height: 32),
                   _buildGreeting(),
-                  const SizedBox(height: 32),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Expanded(child: _WordSprintButton(onTap: _goToWordSprint, wordsLearned: (_wordStats['total_seen'] ?? 0) as int)),
-                        const SizedBox(height: 14),
-                        Expanded(child: _NewsSprintButton(onTap: _goToNewsSprint, articlesRead: (_newsStats['articles_read'] ?? 0) as int)),
-                      ],
+                  const SizedBox(height: 16),
+                  const WordOfDayCard(),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    height: 180,
+                    child: _WordSprintButton(
+                      onTap: _goToWordSprint,
+                      wordsLearned: (_wordStats['total_seen'] ?? 0) as int,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 180,
+                    child: _NewsSprintButton(
+                      onTap: _goToNewsSprint,
+                      articlesRead: (_newsStats['articles_read'] ?? 0) as int,
                     ),
                   ),
                   const SizedBox(height: 20),
                   _buildStatsRow(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),
