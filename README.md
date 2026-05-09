@@ -11,6 +11,7 @@ Sprint is an Android app built with Flutter that gives you two focused learning 
 
 - **Word Sprint** — learn GRE/SAT words per session (configurable) with live dictionary definitions, phonetics, part of speech, and an MCQ quiz at the end
 - **News Sprint** — read real news articles fetched fresh daily, then take an AI-generated comprehension quiz based on the actual content
+- **Word of the Day** — a daily word from your personal Google Sheets vocabulary collection, shown on the home screen every morning with meaning and example. Works offline after first fetch.
 
 No login. No onboarding. Opens straight to the point.
 
@@ -23,6 +24,7 @@ No login. No onboarding. Opens straight to the point.
 - Java 17
 - A Groq API key (free) — for AI quiz generation
 - A NewsAPI key (free) — for live news
+- A Google account — for the Word of the Day API (Google Sheets + Apps Script, free)
 
 ---
 
@@ -84,6 +86,7 @@ Create `lib/core/utils/app_config.dart`:
 class AppConfig {
   static const String groqApiKey = 'Bearer gsk_your_key_here';
   static const String newsApiKey = 'your_newsapi_key_here';
+  static const String wordOfDayApiUrl = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
 }
 ```
 
@@ -169,15 +172,20 @@ sprint_app/
 │       │       ├── word_card.dart               ← Word, phonetic, POS, meaning, example
 │       │       └── quiz_card.dart               ← MCQ with instant feedback
 │       │
-│       └── news_sprint/
-│           ├── models/news_model.dart
-│           ├── services/
-│           │   ├── news_sprint_service.dart     ← NewsAPI fetch, topic filtering, Groq quiz gen
-│           │   └── news_sprint_provider.dart    ← State machine
-│           ├── screens/news_sprint_screen.dart
-│           └── widgets/
-│               ├── news_card.dart               ← Article card with Read More link
-│               └── news_quiz_card.dart          ← AI-generated MCQ with explanation
+│       │── news_sprint/
+│       │    ├── models/news_model.dart
+│       │    ├── services/
+│       │    │   ├── news_sprint_service.dart      ← NewsAPI fetch, topic filtering, Groq quiz gen
+│       │    │   └── news_sprint_provider.dart     ← State machine
+│       │    ├── screens/news_sprint_screen.dart
+│       │    └── widgets/
+│       │        ├── news_card.dart                ← Article card with Read More link
+│       │        └── news_quiz_card.dart           ← AI-generated MCQ with explanation
+│       │ 
+│       ├── word_of_day/
+│       │   ├── models/word_of_day_model.dart      ← WordOfDayModel
+│       │   ├── services/word_of_day_service.dart  ← Fetch, day cache, offline fallback
+│       │   └── widgets/word_of_day_card.dart      ← Expandable card on home screen    
 │
 └── assets/data/word_list.json                   ← 315 GRE/SAT word strings (no definitions stored)
 ```
@@ -204,6 +212,14 @@ sprint_app/
 - **Auth:** Free API key from console.groq.com
 - **What it does:** Reads each article and generates a factual comprehension question with 4 plausible options and an explanation
 - **Free tier:** 14,400 requests/day
+
+### Word of the Day — Google Sheets + Apps Script
+- **Endpoint:** `https://script.google.com/macros/s/YOUR_ID/exec?action=word_of_day`
+- **Auth:** None. Deployed as public Google Apps Script web app.
+- **Returns:** Word, meaning, example sentence, difficulty
+- **Cache:** Day-based — same word all day, refreshes at midnight
+- **Offline:** Falls back to last successfully fetched word if no internet
+- **Setup:** Paste your vocabulary into a Google Sheet (columns: word, meaning, example, difficulty) → Extensions → Apps Script → deploy as web app
 
 ---
 
@@ -242,6 +258,53 @@ Session start
   │
   └─ Summary: articles read + quiz score
 ```
+
+## How Word of the Day Works
+
+```
+App open
+  │
+  ├─ Check day cache → already fetched today? show instantly (0ms)
+  │
+  ├─ Otherwise: GET Google Apps Script → pick word by day-of-year index
+  │     └─ Same word shown to all users on the same calendar day
+  │
+  ├─ Cache as today's word 
+  │
+  ├─ Show expandable card on home screen
+        ├─ Collapsed: word + meaning (2 lines)
+        └─ Expanded: full meaning + example sentence
+
+Word rotates daily. After first successful fetch, works fully offline.
+```
+
+## Setting Up Word of the Day
+
+1. Create a new Google Sheet with these columns:
+
+   | A (word) | B (meaning) | C (example) | D (difficulty) |
+   |----------|-------------|-------------|----------------|
+   | Ephemeral | Lasting for a very short time | Fame is ephemeral in the age of social media | medium |
+
+2. Paste all your words from your vocabulary document into this format
+
+3. Go to **Extensions → Apps Script** in the sheet
+
+4. Paste the Apps Script code (see `/scripts/word_of_day.gs` in this repo)
+
+5. Click **Deploy → New deployment**:
+   - Type: Web app
+   - Execute as: Me
+   - Who has access: Anyone
+
+6. Copy the deployment URL and paste it into `app_config.dart` as `wordOfDayApiUrl`
+
+7. Test in browser: `YOUR_URL?action=word_of_day` — should return JSON with a word
+
+Available actions:
+- `?action=word_of_day` — today's word (consistent all day)
+- `?action=random` — random word from your collection
+- `?action=all` — full word list as JSON
 
 ---
 
@@ -308,8 +371,10 @@ Get notifications as per your convenience - enable them from settings and set a 
 | Read More links to full articles | Done |
 | Settings: word count, quiz count, news topic | Done |
 | Push notification daily reminder | Done |
+| Word of the Day from personal Google Sheets collection | Done |
+| Word of the Day home screen widget | Next |
 | iOS support | 🔲 Planned |
 
 ---
 
-*Flutter 3.41 · Android 5.0+ · No login · No ads · Word Sprint works offline after first session*
+*Flutter 3.41 · Android 5.0+ · No login · No ads · Let's sprint*
