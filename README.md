@@ -8,11 +8,11 @@
 ## Screenshots
 
 | Home Screen | Word Sprint | News Sprint |
-|---|---|---|---|
+|---|---|---|
 | ![Home](assets/screenshots/main.png) | ![Word Sprint](assets/screenshots/word_sprint.png) | ![News Sprint](assets/screenshots/news_sprint.png) | 
 
 | Word Quiz | Streak Calendar | Settings Page |
-|---|---|---|---|
+|---|---|---|
 | ![Word Quiz](assets/screenshots/word_quiz.png) | ![Streak](assets/screenshots/streak.png) | ![Settings](assets/screenshots/settings.png) | 
 
 ---
