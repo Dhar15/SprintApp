@@ -347,6 +347,10 @@ Get notifications as per your convenience - enable them from settings and set a 
 
 ---
 
+## Word of the Day Widget 
+
+Sometimes we are too busy to login to the app - enable user to add a widget to home screen which shows them the word of the day so not a single day goes without learning something new.
+
 ## Troubleshooting
 
 | Problem | Fix |
@@ -384,7 +388,7 @@ Get notifications as per your convenience - enable them from settings and set a 
 | Settings: word count, quiz count, news topic | Done |
 | Push notification daily reminder | Done |
 | Word of the Day from personal Google Sheets collection | Done |
-| Word of the Day home screen widget | Next |
+| Word of the Day home screen widget | Done |
 | iOS support | 🔲 Planned |
 
 ---
