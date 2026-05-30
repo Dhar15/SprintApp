@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/word_of_day_model.dart';
 import '../../../core/utils/app_config.dart';
+import 'package:home_widget/home_widget.dart';
 
 class WordOfDayService {
   static const _cacheKey = 'word_of_day_cache';
@@ -32,6 +33,7 @@ class WordOfDayService {
       );
 
       await _cache(word);
+      await _pushToWidget(word);
       return word;
     } catch (e) {
       print('Word of Day API error: $e');
@@ -63,5 +65,13 @@ class WordOfDayService {
     final today = DateTime.now().toIso8601String().substring(0, 10);
     await prefs.setString(_cacheKey, jsonEncode(word.toJson()));
     await prefs.setString(_cacheDateKey, today);
+  }
+
+  Future<void> _pushToWidget(WordOfDayModel word) async {
+    await HomeWidget.saveWidgetData('word_of_day_word', word.word);
+    await HomeWidget.saveWidgetData('word_of_day_meaning', word.meaning);
+    await HomeWidget.updateWidget(
+      androidName: 'WordOfDayWidget',
+    );
   }
 }

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sprint</string>
+    <string name="widget_description">Shows your word of the day from your personal collection</string>
+</resources>
