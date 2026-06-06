@@ -28,7 +28,6 @@ Future<void> main() async {
   // Init local storage
   await StorageService.instance.init();
   await NotificationService.instance.init(); 
-  await HomeWidget.setAppGroupId('com.example.sprint_app');
 
   await Workmanager().initialize(backgroundCallback);
   await Workmanager().registerPeriodicTask(

@@ -13,6 +13,7 @@ import '../widgets/streak_calendar.dart';
 import '../../settings/settings_screen.dart';
 import '../../../core/utils/storage_service.dart';
 import '../../word_of_day/widgets/word_of_day_card.dart';
+import '../../gk_card/widgets/gk_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -103,6 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildGreeting(),
                   const SizedBox(height: 16),
                   const WordOfDayCard(),
+                  const SizedBox(height: 20),
+                  const GkCard(),
                   const SizedBox(height: 20),
                   SizedBox(
                     height: 180,

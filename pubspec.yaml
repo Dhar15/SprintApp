@@ -31,3 +31,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/data/word_list.json
+    - assets/data/gk_facts.json
