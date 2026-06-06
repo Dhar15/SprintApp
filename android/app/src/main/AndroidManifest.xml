@@ -55,6 +55,18 @@
                 android:resource="@xml/home_widget_info" />
         </receiver>
 
+        <receiver
+            android:name=".GkOfDayWidget"
+            android:exported="true"
+            android:label="GK of the Day">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/gk_widget_info" />
+        </receiver>
+
         <service
             android:name="be.tramckrijte.workmanager.BackgroundWorker"
             android:exported="false" />
