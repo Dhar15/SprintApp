@@ -5,6 +5,8 @@ import 'core/utils/storage_service.dart';
 import 'features/home/screens/home_screen.dart';
 import 'core/utils/notification_service.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:workmanager/workmanager.dart';
+import 'core/utils/background_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +29,15 @@ Future<void> main() async {
   await StorageService.instance.init();
   await NotificationService.instance.init(); 
   await HomeWidget.setAppGroupId('com.example.sprint_app');
+
+  await Workmanager().initialize(backgroundCallback);
+  await Workmanager().registerPeriodicTask(
+    'wordOfDayRefresh',
+    'fetchWordOfDay',
+    frequency: const Duration(hours: 24),
+    constraints: Constraints(networkType: NetworkType.connected),
+    existingWorkPolicy: ExistingWorkPolicy.keep,
+  );
 
   runApp(const SprintApp());
 }
