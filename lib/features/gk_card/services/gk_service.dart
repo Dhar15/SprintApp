@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/gk_fact_model.dart';
 import 'package:home_widget/home_widget.dart';
 
-
 class GkService {
   static const _cacheKey = 'gk_of_day_index';
   static const _cacheDateKey = 'gk_of_day_date';
@@ -57,21 +56,21 @@ class GkService {
   }
 
   Future<void> _pushToWidget(GkFactModel fact) async {
-        try {
-            const categoryEmojis = {
-            'positions': '🏛️', 'history': '📜', 'science': '🔬',
-            'sports': '⚽', 'organisations': '🌐', 'schemes': '📋',
-            'dates': '📅', 'currency': '💰', 'indexes': '📊',
-            'discoverers': '💡', 'geography': '🗺️', 'politics': '🗳️',
-            'authors': '✍️', 'miscellaneous': '🎲',
-            };
-            final emoji = categoryEmojis[fact.category] ?? '🎲';
-            await HomeWidget.saveWidgetData('gk_of_day_fact', fact.fact);
-            await HomeWidget.saveWidgetData(
-                'gk_of_day_category', '$emoji ${fact.category.toUpperCase()}');
-            await HomeWidget.updateWidget(androidName: 'GkOfDayWidget');
-        } catch (e) {
-            print('GK widget push error: $e');
-        }
+    try {
+      const categoryEmojis = {
+      'positions': '🏛️', 'history': '📜', 'science': '🔬',
+      'sports': '⚽', 'organisations': '🌐', 'schemes': '📋',
+      'dates': '📅', 'currency': '💰', 'indexes': '📊',
+      'discoverers': '💡', 'geography': '🗺️', 'politics': '🗳️',
+      'authors': '✍️', 'miscellaneous': '🎲',
+      };
+      final emoji = categoryEmojis[fact.category] ?? '🎲';
+      await HomeWidget.saveWidgetData('gk_of_day_fact', fact.fact);
+      await HomeWidget.saveWidgetData(
+          'gk_of_day_category', '$emoji ${fact.category.toUpperCase()}');
+      await HomeWidget.updateWidget(androidName: 'GkOfDayWidget');
+    } catch (e) {
+      print('GK widget push error: $e'); 
     }
+  }
 }
