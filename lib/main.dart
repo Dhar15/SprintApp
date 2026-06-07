@@ -31,11 +31,11 @@ Future<void> main() async {
 
   await Workmanager().initialize(backgroundCallback);
   await Workmanager().registerPeriodicTask(
-    'wordOfDayRefresh',
-    'fetchWordOfDay',
+    'dailyRefresh',       // unique task name
+    'dailyRefresh',       // task identifier matched in backgroundCallback
     frequency: const Duration(hours: 24),
     constraints: Constraints(networkType: NetworkType.connected),
-    existingWorkPolicy: ExistingWorkPolicy.keep,
+    existingWorkPolicy: ExistingWorkPolicy.replace, // replace old wordOfDayRefresh task
   );
 
   runApp(const SprintApp());
