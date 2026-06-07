@@ -435,9 +435,9 @@ Both widgets auto-refresh daily via a background task (Workmanager). For reliabl
 | GK of the Day from personal collection (JSON) | Done |
 | Word of the Day home screen widget | Done |
 | GK of the Day home screen widget | Done |
-| Weekly progress report notification | 🔲 Planned |
-| iOS support | 🔲 Planned |
+| Weekly progress report notification | Planned |
+| iOS support | Planned |
 
 ---
 
-*Flutter 3.41 · Android 5.0+ · No login · No ads · Let's sprint*
+*Flutter 3.41 · Android 5.0+ · No login · No ads · Let's sprint!*
