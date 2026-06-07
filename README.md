@@ -1,4 +1,4 @@
-# ⚡ Sprint — Swipe-Based Daily Learning App
+# Sprint — Swipe-Based Daily Learning App
 
 > Replace mindless scrolling with intelligent, addictive micro-learning.  
 > Live dictionary definitions. Real news. AI-generated quizzes. Zero friction.
@@ -24,6 +24,7 @@ Sprint is an Android app built with Flutter that gives you two focused learning 
 - **Word Sprint** — learn GRE/SAT words per session (configurable) with live dictionary definitions, phonetics, part of speech, and an MCQ quiz at the end
 - **News Sprint** — read real news articles fetched fresh daily, then take an AI-generated comprehension quiz based on the actual content
 - **Word of the Day** — a daily word from your personal Google Sheets vocabulary collection, shown on the home screen every morning with meaning and example. Works offline after first fetch.
+- **GK of the Day** — a daily General Knowledge fact from your personal curated collection, shown on the home screen with category context. Fully offline, no internet needed.
 
 No login. No onboarding. Opens straight to the point.
 
@@ -163,26 +164,28 @@ sprint_app/
 │   │   ├── theme/app_theme.dart               ← Colors, fonts (DM Sans), design tokens
 │   │   └── utils/
 │   │       ├── storage_service.dart            ← SharedPreferences: word cache, stats, streak, settings
-│           ├── notification_service.dart       ← Push Notifications to the user
-│   │       └── app_config.dart                 ← API keys (gitignored)
+│   |       ├── notification_service.dart       ← Push Notifications to the user
+│   |       ├── background_service.dart         ← Workmanager background (auto update widgets data in background)
+│   |       └── app_config.dart                 ← API keys (gitignored)
+|   |
 │   │
 │   └── features/
 │       ├── home/
-│       │   ├── screens/home_screen.dart        ← Home: greeting, streak chip, stats, sprint buttons
-│       │   └── widgets/streak_calendar.dart    ← Bottom sheet: 3-month scrollable calendar
+│       │   ├── screens/home_screen.dart          ← Home: greeting, streak chip, stats, sprint buttons
+│       │   └── widgets/streak_calendar.dart      ← Bottom sheet: 3-month scrollable calendar
 │       │
 │       ├── settings/
-│       │   └── settings_screen.dart            ← Word count, quiz count sliders + news topic picker
+│       │   └── settings_screen.dart              ← Word count, quiz count sliders + news topic picker
 │       │
 │       ├── word_sprint/
-│       │   ├── models/word_model.dart           ← WordModel + fromDictionaryApi factory
+│       │   ├── models/word_model.dart            ← WordModel + fromDictionaryApi factory
 │       │   ├── services/
-│       │   │   ├── word_sprint_service.dart     ← Parallel API fetch, session logic, quiz gen
-│       │   │   └── word_sprint_provider.dart    ← State machine (idle→loading→words→quiz→summary)
+│       │   │   ├── word_sprint_service.dart      ← Parallel API fetch, session logic, quiz gen
+│       │   │   └── word_sprint_provider.dart     ← State machine (idle→loading→words→quiz→summary)
 │       │   ├── screens/word_sprint_screen.dart
 │       │   └── widgets/
-│       │       ├── word_card.dart               ← Word, phonetic, POS, meaning, example
-│       │       └── quiz_card.dart               ← MCQ with instant feedback
+│       │       ├── word_card.dart                ← Word, phonetic, POS, meaning, example
+│       │       └── quiz_card.dart                ← MCQ with instant feedback
 │       │
 │       │── news_sprint/
 │       │    ├── models/news_model.dart
@@ -197,9 +200,16 @@ sprint_app/
 │       ├── word_of_day/
 │       │   ├── models/word_of_day_model.dart      ← WordOfDayModel
 │       │   ├── services/word_of_day_service.dart  ← Fetch, day cache, offline fallback
-│       │   └── widgets/word_of_day_card.dart      ← Expandable card on home screen    
+│       │   └── widgets/word_of_day_card.dart      ← Expandable card on home screen
+|       |
+│       ├── gk_card/
+│       │   ├── models/gk_fact_model.dart          ← GkFactModel
+│       │   ├── services/gk_service.dart           ← Load JSON, day-based rotation, widget push
+│       │   └── widgets/gk_card.dart               ← Expandable GK card on home screen
 │
-└── assets/data/word_list.json                   ← 315 GRE/SAT word strings (no definitions stored)
+└── assets/data/
+    ├── word_list.json                             ← 315 GRE/SAT word strings (No definitions)
+    └── gk_facts.json                              ← Personal GK fact collection (JSON)
 ```
 
 ---
@@ -232,6 +242,13 @@ sprint_app/
 - **Cache:** Day-based — same word all day, refreshes at midnight
 - **Offline:** Falls back to last successfully fetched word if no internet
 - **Setup:** Paste your vocabulary into a Google Sheet (columns: word, meaning, example, difficulty) → Extensions → Apps Script → deploy as web app
+
+### GK of the Day — Local JSON Asset
+- **Source:** `assets/data/gk_facts.json` bundled with the app
+- **Auth:** None. Fully offline, no network needed.
+- **Returns:** A GK fact with one of 14 categories: positions, history, science, sports, organisations, schemes, dates, currency, indexes, discoverers, geography, politics, authors, miscellaneous
+- **Cache:** Day-based — same fact all day, rotates daily based on day-of-year
+- **Widget:** Pushes to Android home screen GK of the Day widget via home_widget package
 
 ---
 
@@ -274,16 +291,15 @@ Session start
 ## How Word of the Day Works
 
 ```
-App open
+App open / Background task fires (daily, ~24hr interval)
   │
   ├─ Check day cache → already fetched today? show instantly (0ms)
   │
   ├─ Otherwise: GET Google Apps Script → pick word by day-of-year index
-  │     └─ Same word shown to all users on the same calendar day
   │
-  ├─ Cache as today's word 
+  ├─ Cache as today's word → push to Word of the Day widget
   │
-  ├─ Show expandable card on home screen
+  └─ Show expandable card on home screen
         ├─ Collapsed: word + meaning (2 lines)
         └─ Expanded: full meaning + example sentence
 
@@ -318,6 +334,27 @@ Available actions:
 - `?action=random` — random word from your collection
 - `?action=all` — full word list as JSON
 
+## How GK of the Day Works
+
+```
+App open / Background task fires
+  │
+  ├─ Check day cache → already picked today? serve instantly
+  │
+  ├─ Otherwise: load gk_facts.json from assets
+  │     └─ Pick fact by day-of-year index — consistent all day
+  │
+  ├─ Cache today's index to SharedPreferences
+  │
+  ├─ Push fact + category to GK of the Day widget
+  │
+  └─ Show expandable card on home screen
+        ├─ Collapsed: fact text (2 lines) + category chip
+        └─ Expanded: full fact text
+
+Rotates daily. Fully offline — no internet required ever.
+```
+
 ---
 
 ## Settings
@@ -347,9 +384,16 @@ Get notifications as per your convenience - enable them from settings and set a 
 
 ---
 
-## Word of the Day Widget 
+## Home Screen Widgets
 
-Sometimes we are too busy to login to the app - enable user to add a widget to home screen which shows them the word of the day so not a single day goes without learning something new.
+### Word of the Day Widget
+Add to your home screen to see today's vocabulary word without opening the app. Shows the word and its meaning. Tapping opens Sprint.
+
+### GK of the Day Widget
+Add to your home screen to see today's GK fact without opening the app. Shows the fact and its category. Tapping opens Sprint.
+
+Both widgets auto-refresh daily via a background task (Workmanager). For reliable background updates on your device go to:
+**Settings → Apps → Sprint → Battery → Unrestricted**
 
 ## Troubleshooting
 
@@ -387,8 +431,11 @@ Sometimes we are too busy to login to the app - enable user to add a widget to h
 | Read More links to full articles | Done |
 | Settings: word count, quiz count, news topic | Done |
 | Push notification daily reminder | Done |
-| Word of the Day from personal Google Sheets collection | Done |
+| Word of the Day from personal collection (Google Sheet API) | Done |
+| GK of the Day from personal collection (JSON) | Done |
 | Word of the Day home screen widget | Done |
+| GK of the Day home screen widget | Done |
+| Weekly progress report notification | 🔲 Planned |
 | iOS support | 🔲 Planned |
 
 ---
