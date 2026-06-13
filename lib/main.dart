@@ -30,13 +30,9 @@ Future<void> main() async {
   await NotificationService.instance.init(); 
 
   await Workmanager().initialize(backgroundCallback);
-  await Workmanager().registerPeriodicTask(
-    'dailyRefresh',       // unique task name
-    'dailyRefresh',       // task identifier matched in backgroundCallback
-    frequency: const Duration(hours: 24),
-    constraints: Constraints(networkType: NetworkType.connected),
-    existingWorkPolicy: ExistingWorkPolicy.replace, // replace old wordOfDayRefresh task
-  );
+  final hour = StorageService.instance.getWidgetRefreshHour();
+  final minute = StorageService.instance.getWidgetRefreshMinute();
+  await scheduleDailyRefresh(hour, minute);
 
   runApp(const SprintApp());
 }

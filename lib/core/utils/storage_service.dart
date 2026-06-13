@@ -221,4 +221,16 @@ class StorageService {
     await _p.remove('news_cache_date');
     await _p.remove('cached_news_topic');
   }
+
+  // -- Widget refresh time ---------------------------------------------------------
+  static const _refreshHourKey = 'widget_refresh_hour';
+  static const _refreshMinuteKey = 'widget_refresh_minute';
+
+  int getWidgetRefreshHour() => _p.getInt(_refreshHourKey) ?? 9;
+  int getWidgetRefreshMinute() => _p.getInt(_refreshMinuteKey) ?? 0;
+
+  Future<void> setWidgetRefreshTime(int hour, int minute) async {
+    await _p.setInt(_refreshHourKey, hour);
+    await _p.setInt(_refreshMinuteKey, minute);
+  }
 }

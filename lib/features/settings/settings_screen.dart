@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/storage_service.dart';
 import '../../../core/utils/notification_service.dart';
+import '../../../core/utils/background_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -18,6 +19,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late String _newsTopic;
   late bool _notificationsEnabled;
   late TimeOfDay _notificationTime;
+  late TimeOfDay _widgetRefreshTime;
 
   final List<Map<String, String>> _topics = [
     {'value': 'all',          'label': 'All Topics',   'emoji': '🌍'},
@@ -41,6 +43,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _notificationTime = TimeOfDay(
       hour: s.getNotificationHour(),
       minute: s.getNotificationMinute(),
+    );
+    _widgetRefreshTime = TimeOfDay(
+      hour: s.getWidgetRefreshHour(),
+      minute: s.getWidgetRefreshMinute(),
     );
   }
 
@@ -300,6 +306,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ],
+          ],
+        ),
+        const SizedBox(height: 24),
+        _buildSection(
+          label: 'WIDGET REFRESH',
+          color: AppColors.accent,
+          children: [
+            GestureDetector(
+              onTap: () async {
+                final picked = await showTimePicker(
+                  context: context,
+                  initialTime: _widgetRefreshTime,
+                  builder: (context, child) => Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.dark(
+                        primary: AppColors.accent,
+                        surface: AppColors.surfaceElevated,
+                        onSurface: AppColors.textPrimary,
+                      ),
+                    ),
+                    child: child!,
+                  ),
+                );
+                if (picked != null) {
+                  setState(() => _widgetRefreshTime = picked);
+                  await StorageService.instance.setWidgetRefreshTime(
+                    picked.hour, picked.minute,
+                  );
+                  await scheduleDailyRefresh(picked.hour, picked.minute);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.accent.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.widgets_rounded, color: AppColors.accent, size: 18),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Widgets update at ${_widgetRefreshTime.format(context)}',
+                      style: GoogleFonts.dmSans(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Change',
+                      style: GoogleFonts.dmSans(
+                        color: AppColors.accent,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
         ],
