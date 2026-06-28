@@ -7,6 +7,7 @@ import 'core/utils/notification_service.dart';
 import 'package:home_widget/home_widget.dart';
 import 'package:workmanager/workmanager.dart';
 import 'core/utils/background_service.dart';
+import 'package:flutter/foundation.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,10 +30,14 @@ Future<void> main() async {
   await StorageService.instance.init();
   await NotificationService.instance.init(); 
 
-  await Workmanager().initialize(backgroundCallback);
-  final hour = StorageService.instance.getWidgetRefreshHour();
-  final minute = StorageService.instance.getWidgetRefreshMinute();
-  await scheduleDailyRefresh(hour, minute);
+  if (!kIsWeb) {
+    await Workmanager().initialize(backgroundCallback);
+
+    final hour = StorageService.instance.getWidgetRefreshHour();
+    final minute = StorageService.instance.getWidgetRefreshMinute();
+
+    await scheduleDailyRefresh(hour, minute);
+  }
 
   runApp(const SprintApp());
 }
