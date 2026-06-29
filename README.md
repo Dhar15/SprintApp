@@ -38,6 +38,7 @@ No login. No onboarding. Opens straight to the point.
 - A Groq API key (free) — for AI quiz generation
 - A NewsAPI key (free) — for live news
 - A Google account — for the Word of the Day API (Google Sheets + Apps Script, free)
+- A Supabase account (free) — for GK of the Day REST API
 
 ---
 
@@ -97,9 +98,11 @@ Create `lib/core/utils/app_config.dart`:
 
 ```dart
 class AppConfig {
-  static const String groqApiKey = 'Bearer gsk_your_key_here';
-  static const String newsApiKey = 'your_newsapi_key_here';
+  static const String groqApiKey      = 'Bearer gsk_your_key_here';
+  static const String newsApiKey      = 'your_newsapi_key_here';
   static const String wordOfDayApiUrl = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+  static const String supabaseUrl     = 'https://YOUR_PROJECT.supabase.co';
+  static const String supabaseAnonKey = 'your_supabase_anon_key';
 }
 ```
 
@@ -108,8 +111,8 @@ This file is gitignored — never commit it.
 **Groq** (AI quiz generation — free, no credit card needed):  
 https://console.groq.com → API Keys → Create key
 
-**NewsAPI** (live news — free tier):  
-https://newsapi.org/register
+**Supabase** (GK of the Day REST API — free tier):  
+https://supabase.com → New project → copy Project URL and anon key
 
 ---
 
@@ -204,12 +207,12 @@ sprint_app/
 |       |
 │       ├── gk_card/
 │       │   ├── models/gk_fact_model.dart          ← GkFactModel
-│       │   ├── services/gk_service.dart           ← Load JSON, day-based rotation, widget push
-│       │   └── widgets/gk_card.dart               ← Expandable GK card on home screen
+│       │   ├── services/gk_service.dart           ← Supabase GET/PATCH, day-based rotation, widget push, local JSON fallback
+│       │   └── widgets/gk_card.dart               ← Expandable GK card, long-press edit sheet with category dropdown
 │
 └── assets/data/
     ├── word_list.json                             ← 315 GRE/SAT word strings (No definitions)
-    └── gk_facts.json                              ← Personal GK fact collection (JSON)
+    └── gk_facts.json                              ← GK facts fallback (used when Supabase is unreachable)
 ```
 
 ---
@@ -243,12 +246,15 @@ sprint_app/
 - **Offline:** Falls back to last successfully fetched word if no internet
 - **Setup:** Paste your vocabulary into a Google Sheet (columns: word, meaning, example, difficulty) → Extensions → Apps Script → deploy as web app
 
-### GK of the Day — Local JSON Asset
-- **Source:** `assets/data/gk_facts.json` bundled with the app
-- **Auth:** None. Fully offline, no network needed.
-- **Returns:** A GK fact with one of 14 categories: positions, history, science, sports, organisations, schemes, dates, currency, indexes, discoverers, geography, politics, authors, miscellaneous
-- **Cache:** Day-based — same fact all day, rotates daily based on day-of-year
+### GK of the Day — Supabase REST API
+- **Endpoint:** `https://YOUR_PROJECT.supabase.co/rest/v1/gk_facts?select=id,category,fact&active=eq.true&order=id.asc`
+- **Auth:** Supabase anon key (public read). Service role key for writes — never put in app.
+- **Returns:** Array of GK facts with id, category, and fact fields
+- **Categories:** positions, history, science, sports, organisations, schemes, dates, currency, indexes, discoverers, geography, politics, authors, miscellaneous
+- **Cache:** Day-based — same fact all day, rotates daily based on day-of-year index
+- **Fallback:** Local `gk_facts.json` asset if Supabase is unreachable
 - **Widget:** Pushes to Android home screen GK of the Day widget via home_widget package
+- **Edit:** Long press (mobile) or right-click (desktop) the GK card to edit any fact or its category directly from the app — sends a PATCH to Supabase
 
 ---
 
@@ -341,19 +347,63 @@ App open / Background task fires
   │
   ├─ Check day cache → already picked today? serve instantly
   │
-  ├─ Otherwise: load gk_facts.json from assets
-  │     └─ Pick fact by day-of-year index — consistent all day
+  ├─ Otherwise: GET Supabase gk_facts table (active facts, ordered by id)
+  │     └─ If Supabase unreachable → fall back to local gk_facts.json asset
+  │
+  ├─ Pick fact by day-of-year index — same fact shown all day
   │
   ├─ Cache today's index to SharedPreferences
   │
   ├─ Push fact + category to GK of the Day widget
   │
   └─ Show expandable card on home screen
-        ├─ Collapsed: fact text (2 lines) + category chip
+        ├─ Collapsed: fact text (2 lines) + category chip + "Hold to edit" hint
         └─ Expanded: full fact text
 
-Rotates daily. Fully offline — no internet required ever.
+To edit a fact: long press the card (mobile) or right-click (desktop)
+→ edit the fact text and/or change the category from a dropdown
+→ tap Save → PATCH sent to Supabase → card updates immediately
 ```
+
+## Setting Up GK of the Day
+
+1. Create a Supabase project at https://supabase.com
+
+2. Run this in the SQL Editor to create the table:
+
+```sql
+create table gk_facts (
+  id serial primary key,
+  category text not null,
+  fact text not null,
+  active boolean default true,
+  created_at timestamptz default now()
+);
+
+alter table gk_facts enable row level security;
+
+create policy "Public read"
+  on gk_facts for select
+  using (true);
+```
+
+3. Import your facts via the Supabase Table Editor (CSV import) or SQL insert
+
+4. Copy your **Project URL** and **anon key** from Project Settings → API and add them to `app_config.dart`
+
+5. To update a fact from the app: long press the GK card → edit → Save
+
+6. To update a fact directly via curl:
+
+```bash
+curl -X PATCH "https://YOUR_PROJECT.supabase.co/rest/v1/gk_facts?id=eq.FACT_ID" \
+  -H "apikey: YOUR_SERVICE_ROLE_KEY" \
+  -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"fact": "Updated fact text", "category": "history"}'
+```
+
+Note: use **service role key** for curl/Postman writes (never put this in the app). The app uses the **anon key** for both reads and its own PATCH calls, which works because the facts are my personal data.
 
 ---
 
@@ -412,6 +462,7 @@ Both widgets auto-refresh daily via a background task (Workmanager). For reliabl
 | Seeing old/wrong news after topic change | Add `clearNewsCache()` call once in provider, hot restart, then remove it |
 | Quiz shows fallback questions | Check Groq key has `Bearer ` prefix: `'Bearer gsk_...'` |
 | Fonts look wrong on first run | DM Sans downloads via google_fonts on first launch — needs internet once |
+| GK of the day update fails | Confirm Row Level Security policy allows updates, or use service role key for direct curl edits |
 
 ---
 
@@ -432,9 +483,12 @@ Both widgets auto-refresh daily via a background task (Workmanager). For reliabl
 | Settings: word count, quiz count, news topic | Done |
 | Push notification daily reminder | Done |
 | Word of the Day from personal collection (Google Sheet API) | Done |
-| GK of the Day from personal collection (JSON) | Done |
 | Word of the Day home screen widget | Done |
 | GK of the Day home screen widget | Done |
+| GK of the Day — Supabase REST API (GET + PATCH)      | Done |
+| In-app GK fact editing (long press → edit sheet)     | Done |
+| Daily background widget refresh (Workmanager)        | Done |
+| Widget refresh time configurable from Settings       | Done |
 | Weekly progress report notification | Planned |
 | iOS support | Planned |
 
