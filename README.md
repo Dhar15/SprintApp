@@ -23,8 +23,8 @@ Sprint is an Android app built with Flutter that gives you two focused learning 
 
 - **Word Sprint** — learn GRE/SAT words per session (configurable) with live dictionary definitions, phonetics, part of speech, and an MCQ quiz at the end
 - **News Sprint** — read real news articles fetched fresh daily, then take an AI-generated comprehension quiz based on the actual content
-- **Word of the Day** — a daily word from your personal Google Sheets vocabulary collection, shown on the home screen every morning with meaning and example. Works offline after first fetch.
-- **GK of the Day** — a daily General Knowledge fact from your personal curated collection, shown on the home screen with category context. Fully offline, no internet needed.
+- **Word of the Day** — a daily word from my personal Google Sheets vocabulary collection, shown on the home screen every morning with meaning and example. Works offline after first fetch.
+- **GK of the Day** — a daily General Knowledge fact from my personal curated collection, shown on the home screen with category context. Fully offline, no internet needed.
 
 No login. No onboarding. Opens straight to the point.
 
@@ -416,6 +416,8 @@ Accessible via the tune icon (⚙) on the home screen top bar.
 | Words per session | 12 | 5 – 20 |
 | Quiz questions | 8 | 3 – words per session |
 | News topic | All | All, Technology, Business, Science, Health, Sports, Entertainment, Politics |
+| Daily Reminder | Off | Toggle ON and configure clock timing as per your preference |
+| Widget Refresh | 09:00 AM | Configure clock timing as per your preference |
 
 Quiz questions auto-clamp when words per session is reduced below the current quiz count.  
 News cache invalidates automatically when topic is changed.
